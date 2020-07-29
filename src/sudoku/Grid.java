@@ -25,6 +25,7 @@ public class Grid {
     public Grid(int size) {
         this.size = size;
         this.tab = new int[size][];
+        this.maxIndex = size * size;
         this.variable = new boolean[size][];
         for (int i = 0; i < size; i++) {
             tab[i] = new int[size];
@@ -38,12 +39,18 @@ public class Grid {
 
     public Grid() {
         this(9);
+//        initGrid("480000000" + "000250100" + "000000904"
+//                + "004008010" + "010046030" + "008005070"
+//                + "000000502" + "000130800" + "960000000");
 //        initGrid("000804000" + "200000006" + "403000901"
 //                + "000060000" + "010000050" + "605908103"
 //                + "080000060" + "006000800" + "109506204");
-        initGrid("530070000" + "600195000" + "098000060"
-                + "800060003" + "400803001" + "700020006"
-                + "060000280" + "000419005" + "000080079");
+//        initGrid("530070000" + "600195000" + "098000060"
+//                + "800060003" + "400803001" + "700020006"
+//                + "060000280" + "000419005" + "000080079");
+        initGrid("000000000" + "000000000" + "000000000"
+                + "000000000" + "000000000" + "000000000"
+                + "000000000" + "000000000" + "000000000");
         this.printGrid();
     }
 
@@ -71,62 +78,43 @@ public class Grid {
             }
             System.out.println("");
         }
+        System.out.println("...\n");
     }
 
     /**
      * Solve the grid using a backtracking algorithm. Start at the first empty
-     * digit, find a possible value; go back is no value is possible.
+     * digit, find a possible value; go back if no value is possible.
      */
     public boolean solve() {
         return solve(0, true);
     }
 
     public boolean solve(int index, boolean forward) {
-        step++;
-        if (index > maxDepthReached) {
-            maxDepthReached = index;
-            for (int i = 0; i < index; i++) {
-            }
-            System.out.println(step + ": " + index);
+
+        System.out.println("index " + index);
+        printGrid();
+
+        int line = index / 9;
+        int col = index - 9 * line;
+
+        if (line >= 9) {
+            System.out.println("Success !");
+            printGrid();
+            return true;
+        } else if (line < 0) {
+            System.out.println("No solution.");
+            return false;
         }
 
-        Grid.maxIndex = Math.max(Grid.maxIndex, index);
-
-        boolean result = false;
-
-        int row = index / size;
-        int col = index - size * row;
-
-        if (index < 0 && !forward) {
-            // We came back to the first digit, no solution exists.
-            result = false;
-        } else {
-
-            if (variable[row][col]) {
-                if (tab[row][col] == 9) {
-                    // No possible value, we need to go backwards.
-                    tab[row][col] = 0;
-                    solve(index - 1, false);
-                } else {
-                    // Test next number (increase value).
-                    tab[row][col]++;
-                    if (isCorrect()) {
-                        // Go to the next position
-                        solve(index + 1, true);
-                    } else {
-                        // Try the next value
-                        solve(index, true);
-                    }
-                }
-            } else {
-                if (forward) {
-                    solve(index + 1, true);
-                } else {
-                    solve(index - 1, false);
-                }
+        while (tab[line][col] < 9) {
+            tab[line][col]++;
+            if (isCorrect() && solve(index + 1, true)) {
+                return true;
             }
         }
-        return result;
+        // Tested all values, none fits. Need to go backward.
+        tab[line][col] = 0;
+        return solve(index - 1, false);
     }
 
     public boolean isCorrect() {
