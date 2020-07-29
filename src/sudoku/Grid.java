@@ -48,9 +48,9 @@ public class Grid {
 //        initGrid("530070000" + "600195000" + "098000060"
 //                + "800060003" + "400803001" + "700020006"
 //                + "060000280" + "000419005" + "000080079");
-        initGrid("000000000" + "000000000" + "000000000"
-                + "000000000" + "000000000" + "000000000"
-                + "000000000" + "000000000" + "000000000");
+        initGrid("800000000" + "000300092" + "003085000"
+                + "060200400" + "034000580" + "090800300"
+                + "009024000" + "000700014" + "300000000");
         this.printGrid();
     }
 
@@ -75,6 +75,9 @@ public class Grid {
             for (int j = 0; j < size; j++) {
                 int value = tab[i][j];
                 System.out.print(value == 0 ? "-" : value);
+                if (3 * ((j + 1) / 3) == (j + 1)) {
+                    System.out.print(" ");
+                }
             }
             System.out.println("");
         }
@@ -84,15 +87,23 @@ public class Grid {
     /**
      * Solve the grid using a backtracking algorithm. Start at the first empty
      * digit, find a possible value; go back if no value is possible.
+     *
+     * @return true when the gris has at least one solution, false when there is
+     * no solution.
      */
     public boolean solve() {
-        return solve(0, true);
+        return solve(0);
     }
 
-    public boolean solve(int index, boolean forward) {
+    public boolean solve(int index) {
 
-        System.out.println("index " + index);
-        printGrid();
+        step++;
+
+        if (index > maxDepthReached) {
+            maxDepthReached = index;
+        }
+
+        System.out.println("index " + index + ", max depth: " + maxDepthReached + ", step: " + step);
 
         int line = index / 9;
         int col = index - 9 * line;
@@ -106,15 +117,20 @@ public class Grid {
             return false;
         }
 
+        if (!variable[line][col]) {
+            // Go to the next empty square
+            return solve(index + 1);
+        }
+
         while (tab[line][col] < 9) {
             tab[line][col]++;
-            if (isCorrect() && solve(index + 1, true)) {
+            if (isCorrect() && solve(index + 1)) {
                 return true;
             }
         }
         // Tested all values, none fits. Need to go backward.
         tab[line][col] = 0;
-        return solve(index - 1, false);
+        return false;
     }
 
     public boolean isCorrect() {
