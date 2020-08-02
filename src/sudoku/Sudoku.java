@@ -15,8 +15,12 @@ public class Sudoku {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Grid g = new Grid();
-//        g.solve();
+
+        String gridToSolve = Grid.grid4;
+
+        Grid g = new Grid(gridToSolve);
+        g.solveWithBacktrack();
+        g = new Grid(gridToSolve);
         g.solveByHand();
     }
 

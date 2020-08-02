@@ -9,6 +9,28 @@ package sudoku;
  */
 public class Grid {
 
+    public static String diabolic1 = "502084600" + "004000008" + "300100000"
+            + "030200006" + "070000090" + "600009030"
+            + "000001009" + "800000500" + "006750204";
+    public static String diabolic2 = "460502001" + "502000000" + "017900000"
+            + "000009400" + "000275000" + "005100000"
+            + "000003860" + "000000904" + "800604017";
+    public static String expert1 = "800234005" + "304560000" + "750000364"
+            + "008002400" + "000906500" + "003000200"
+            + "040000070" + "080105040" + "030020050";
+    public static String grid1 = "480000000" + "000250100" + "000000904"
+            + "004008010" + "010046030" + "008005070"
+            + "000000502" + "000130800" + "960000000";
+    public static String grid2 = "000804000" + "200000006" + "403000901"
+            + "000060000" + "010000050" + "605908103"
+            + "080000060" + "006000800" + "109506204";
+    public static String grid3 = "530070000" + "600195000" + "098000060"
+            + "800060003" + "400803001" + "700020006"
+            + "060000280" + "000419005" + "000080079";
+    public static String grid4 = "800000000" + "000300092" + "003085000"
+            + "060200400" + "034000580" + "090800300"
+            + "009024000" + "000700014" + "300000000";
+
     private static int maxIndex = 0;
 
     private static int step = 0;
@@ -16,7 +38,7 @@ public class Grid {
 
     private int size;
 
-    // The values of the numbers in the grid
+    // The values of the numbers in the grid; 0 for empty, 1-9 for found value.
     private int[][] tab;
 
     // Flags that are true for the numbers we need to find, false for given values.
@@ -51,19 +73,11 @@ public class Grid {
 
     public Grid() {
         this(9);
-        initGrid("480000000" + "000250100" + "000000904"
-                + "004008010" + "010046030" + "008005070"
-                + "000000502" + "000130800" + "960000000");
-//        initGrid("000804000" + "200000006" + "403000901"
-//                + "000060000" + "010000050" + "605908103"
-//                + "080000060" + "006000800" + "109506204");
-//        initGrid("530070000" + "600195000" + "098000060"
-//                + "800060003" + "400803001" + "700020006"
-//                + "060000280" + "000419005" + "000080079");
-//        initGrid("800000000" + "000300092" + "003085000"
-//                + "060200400" + "034000580" + "090800300"
-//                + "009024000" + "000700014" + "300000000");
-        this.printGrid();
+    }
+
+    public Grid(String text) {
+        this(9);
+        initGrid(text);
     }
 
     public final void initGrid(String text) {
@@ -88,8 +102,7 @@ public class Grid {
 
     public void printGrid() {
 
-        if (solvingManually) {
-            System.out.println("Manual solve.");
+        if (solvingManually && !isSolved()) {
             for (int i = 0; i < size; i++) {
                 for (int j = 0; j < size; j++) {
                     if (tab[i][j] != 0) {
@@ -132,12 +145,21 @@ public class Grid {
      * @return true when the gris has at least one solution, false when there is
      * no solution.
      */
-    public boolean solve() {
+    public boolean solveWithBacktrack() {
         solvingManually = false;
-        return solve(0);
+        return solveWithBacktrack(0);
     }
 
-    public boolean solve(int index) {
+    /**
+     * Solve with backtrack algorithm, trying to find the number at position
+     * 'index';
+     *
+     * @param index the index of the number we try to find while still having a
+     * solution for the rest of the grid.
+     * @return true if the grid has a valid solution with this number and all
+     * the ones after.
+     */
+    private boolean solveWithBacktrack(int index) {
 
         step++;
 
@@ -145,28 +167,28 @@ public class Grid {
             maxDepthReached = index;
         }
 
-        System.out.println("index " + index + ", max depth: " + maxDepthReached + ", step: " + step);
-
         int line = index / 9;
         int col = index - 9 * line;
 
         if (line >= 9) {
-            System.out.println("Success !");
+            System.out.println("Success ! " + step + " steps, max depth reached: "
+                    + maxDepthReached);
             printGrid();
             return true;
         } else if (line < 0) {
-            System.out.println("No solution.");
+            System.out.println("No solution; " + step + " steps, "
+                    + "max depth reached: " + maxDepthReached);
             return false;
         }
 
         if (!variable[line][col]) {
             // Go to the next empty square
-            return solve(index + 1);
+            return solveWithBacktrack(index + 1);
         }
 
         while (tab[line][col] < 9) {
             tab[line][col]++;
-            if (isCorrect() && solve(index + 1)) {
+            if (isCorrect() && solveWithBacktrack(index + 1)) {
                 return true;
             }
         }
@@ -189,6 +211,11 @@ public class Grid {
         return true;
     }
 
+    /**
+     * Check that no value appears more than once in any column.
+     *
+     * @return true when all columns are correct (and possibly incomplete).
+     */
     private boolean areColumnsCorrect() {
 
         // Compare each value to each other value in the same column.
@@ -208,6 +235,11 @@ public class Grid {
         return true;
     }
 
+    /**
+     * Check that no value appears more than once in any line.
+     *
+     * @return true when all lines are correct (and possibly incomplete).
+     */
     private boolean areLinesCorrect() {
 
         // Compare each value to each other value in the same line.
@@ -227,6 +259,11 @@ public class Grid {
         return true;
     }
 
+    /**
+     * Check that no value appears more than once in any block.
+     *
+     * @return true when all blocks are correct (and possibly incomplete).
+     */
     private boolean areBlocksCorrect() {
 
         // The number of blocks is also the size of each block.
@@ -242,6 +279,34 @@ public class Grid {
         }
         // At this point, all blocks have passed the test.
         return true;
+    }
+
+    /**
+     * Check that each value has been found, i.e. no square remains unfilled.
+     *
+     * @return true when each square has been filled.
+     */
+    private boolean isFull() {
+        boolean isFull = true;
+        for (int line = 0; line < size; line++) {
+            for (int col = 0; col < size; col++) {
+                if (tab[line][col] == 0) {
+                    // That square is empty.
+                    isFull = false;
+                }
+            }
+        }
+        return isFull;
+    }
+
+    /**
+     * Check that the grid is completely solved, i.e. at the same time full and
+     * without mistakes
+     *
+     * @return true when grid is full and correct.
+     */
+    private boolean isSolved() {
+        return isFull() && isCorrect();
     }
 
     // Check the block (iBlock, jBlock);
@@ -291,25 +356,41 @@ public class Grid {
         return score;
     }
 
-    /*
-     * Use manual methods to solve the grid.
+    /**
+     * Solve manually by applying several times the defined techniques.
+     *
+     * @return true when a solution was found.
      */
     public boolean solveByHand() {
 
         solvingManually = true;
-        printGrid();
+
+        int step = 0;
 
         // Apply the unicity rule as long as it finds new numbers.
         int scoreBefore, scoreAfter;
         do {
             scoreBefore = getScore();
-            applyDigitUnicity();
-            checkNewFoundValues();
-            printGrid();
+            solveByHandStep();
             scoreAfter = getScore();
+            step++;
         } while (scoreBefore != scoreAfter);
 
-        return true;
+        System.out.println("Solving manually: " + step + " steps.");
+        printGrid();
+
+        return isSolved();
+    }
+
+    /**
+     * Apply once every technique. Digit unicity, position unicity
+     */
+    private void solveByHandStep() {
+        applyDigitUnicity();
+        checkNewFoundValues();
+        applyPositionUnicity();
+        checkNewFoundValues();
+        applyDigitUnicity();
     }
 
     /**
@@ -328,11 +409,29 @@ public class Grid {
     }
 
     /**
+     * A digit that exists at only one position in a line, column or block must
+     * be validated for that position.
+     */
+    private void applyPositionUnicity() {
+        for (int line = 0; line < size; line++) {
+            for (int col = 0; col < size; col++) {
+                applyPositionUnicity(line, col);
+            }
+        }
+    }
+
+    /**
      * Remove the digit located at the given line and column from the
      * possibilities in the same line, the same column and the same block.
      *
      * This method only applies when the digit at the given line and column was
      * already found.
+     *
+     * Example:
+     * <4> <8> 123456789 123456789 123456789 123456789 123456789 123456789
+     * 123456789 becomes
+     * <4> <8> 123-567-9 123-567-9 123-567-9 123-567-9 123-567-9 123-567-8
+     * 123-567-9
      *
      * @param line
      * @param col
@@ -395,4 +494,81 @@ public class Grid {
         }
     }
 
+    /**
+     * If a digit appears only once in a line, col or block, it is validated for
+     * the given position.
+     *
+     * Example: on the line --3--67-9 <2> --3--678- --3---7-9 ------7-9 --3-----
+     * ---4-6789 <1> ---45-78- , the value '5' is only possible on the last
+     * square; the line then becomes --3--67-9 <2> --3--678- --3---7-9 ------7-9
+     * --3----- ---4-6789 <1> <5>
+     *
+     * @param line
+     * @param col
+     */
+    private void applyPositionUnicity(int line, int col) {
+        applyPositionUnicityInLine(line, col);
+        applyPositionUnicityInColumn(line, col);
+    }
+
+    private void applyPositionUnicityInLine(int line, int col) {
+        boolean isUnique = true;
+
+        int electedCandidate = -1;
+
+        for (int candidate = 0; candidate < size; candidate++) {
+            electedCandidate = candidate;
+            if (possibleValues[line][col][candidate]) {
+                // Check if the candidate has another possible square to go
+                for (int k = 0; k < size; k++) {
+                    if (possibleValues[line][k][candidate] && k != col) {
+                        // We found another spot where 'candidate' might go on the same line.
+                        isUnique = false;
+                    }
+                }
+            }
+        }
+        if (isUnique) {
+            // At this point the elected candidate has a proper value.
+            tab[line][col] = electedCandidate;
+        }
+    }
+
+    /**
+     * If one candidate in given square is posiible nowhere else in the column,
+     * it gets validated for that square.
+     *
+     * @param line
+     * @param col
+     */
+    private void applyPositionUnicityInColumn(int line, int col) {
+
+        if (tab[line][col] == 0) { // Only when this square has not been resolved.
+
+            boolean isUnique;
+
+            for (int candidate = 0; candidate < size; candidate++) {
+                if (possibleValues[line][col][candidate]) {
+                    isUnique = true;
+                    // Check if the candidate has another possible square to go
+                    for (int otherLine = 0; otherLine < size; otherLine++) {
+                        if (possibleValues[otherLine][col][candidate] && otherLine != line) {
+                            // We found another spot where 'candidate' might go on the same line.
+                            isUnique = false;
+                        }
+                    }
+                    if (isUnique) {
+                        tab[line][col] = candidate;
+
+                        // Only the elected value must remain in the possible values.
+                        for (int k = 0; k < size; k++) {
+                            possibleValues[line][col][k] = false;
+                        }
+                        possibleValues[line][col][candidate] = true;
+                        // At this point the elected candidate should have a proper value and not be -1;
+                    }
+                }
+            }
+        }
+    }
 }
