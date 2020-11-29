@@ -3,31 +3,42 @@
  */
 package sudoku;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author arthurmanoha
  */
 public class Grid {
 
-    public static String diabolic1 = "502084600" + "004000008" + "300100000"
+    // Diabolic
+    public static String grid1 = "502084600" + "004000008" + "300100000"
             + "030200006" + "070000090" + "600009030"
             + "000001009" + "800000500" + "006750204";
-    public static String diabolic2 = "460502001" + "502000000" + "017900000"
+    // Diabolic
+    public static String grid2 = "460502001" + "502000000" + "017900000"
             + "000009400" + "000275000" + "005100000"
             + "000003860" + "000000904" + "800604017";
-    public static String expert1 = "800234005" + "304560000" + "750000364"
+    // Expert
+    public static String grid3 = "800234005" + "304560000" + "750000364"
             + "008002400" + "000906500" + "003000200"
             + "040000070" + "080105040" + "030020050";
-    public static String grid1 = "480000000" + "000250100" + "000000904"
+    // Not rated
+    public static String grid4 = "480000000" + "000250100" + "000000904"
             + "004008010" + "010046030" + "008005070"
             + "000000502" + "000130800" + "960000000";
-    public static String grid2 = "000804000" + "200000006" + "403000901"
+    // Not rated
+    public static String grid5 = "000804000" + "200000006" + "403000901"
             + "000060000" + "010000050" + "605908103"
             + "080000060" + "006000800" + "109506204";
-    public static String grid3 = "530070000" + "600195000" + "098000060"
+    // Not rated
+    public static String grid6 = "530070000" + "600195000" + "098000060"
             + "800060003" + "400803001" + "700020006"
             + "060000280" + "000419005" + "000080079";
-    public static String grid4 = "800000000" + "000300092" + "003085000"
+    // Not rated
+    public static String grid7 = "800000000" + "000300092" + "003085000"
             + "060200400" + "034000580" + "090800300"
             + "009024000" + "000700014" + "300000000";
 
@@ -36,32 +47,36 @@ public class Grid {
     private static int step = 0;
     private static int maxDepthReached = 0;
 
+    // Number of columns, or digits.
     private int size;
 
     // The values of the numbers in the grid; 0 for empty, 1-9 for found value.
-    private int[][] tab;
+    private int[][] solvedDigits;
 
     // Flags that are true for the numbers we need to find, false for given values.
     private boolean[][] variable;
 
     // Flags that tell which values are still possible.
-    // tabByHand[line][col][digit] tells if 'digit+1' is still allowed at that line and column.
+    // possibleValues[line][col][digit] tells if 'digit+1' is still allowed at that line and column.
     private boolean[][][] possibleValues;
 
     private boolean solvingManually;
 
+    // Score at the beginning, i.e. how many digits are aready in place.
+    private int initialScore;
+
     public Grid(int size) {
         this.size = size;
-        this.tab = new int[size][];
+        this.solvedDigits = new int[size][];
         this.possibleValues = new boolean[size][][];
         this.maxIndex = size * size;
         this.variable = new boolean[size][];
         for (int i = 0; i < size; i++) {
-            tab[i] = new int[size];
+            solvedDigits[i] = new int[size];
             possibleValues[i] = new boolean[size][];
             variable[i] = new boolean[size];
             for (int j = 0; j < size; j++) {
-                tab[i][j] = 0;
+                solvedDigits[i][j] = 0;
                 variable[i][j] = false;
                 possibleValues[i][j] = new boolean[size];
                 for (int k = 0; k < size; k++) {
@@ -85,7 +100,7 @@ public class Grid {
             int value = text.charAt(i) - '0';
             int row = i / size;
             int col = i - size * row;
-            tab[row][col] = value;
+            solvedDigits[row][col] = value;
 
             if (value == 0) {
                 variable[row][col] = true;
@@ -98,34 +113,42 @@ public class Grid {
                 possibleValues[row][col][value - 1] = true;
             }
         }
+        initialScore = getScore();
     }
 
     public void printGrid() {
 
         if (solvingManually && !isSolved()) {
-            for (int i = 0; i < size; i++) {
-                for (int j = 0; j < size; j++) {
-                    if (tab[i][j] != 0) {
+            for (int line = 0; line < size; line++) {
+                for (int col = 0; col < size; col++) {
+                    if (solvedDigits[line][col] != 0) {
                         // Print the only value.
-                        System.out.print("   <" + tab[i][j] + ">   ");
+                        System.out.print("   <" + solvedDigits[line][col] + ">   ");
                     } else {
                         // Print all the possible values.
                         for (int k = 0; k < size; k++) {
-                            if (possibleValues[i][j][k]) {
+                            if (possibleValues[line][col][k]) {
                                 System.out.print((k + 1) + "");
                             } else {
                                 System.out.print("-");
                             }
                         }
                     }
-                    System.out.print(" ");
+                    if (3 * ((col + 1) / 3) == (col + 1)) {
+                        System.out.print(" || ");
+                    } else {
+                        System.out.print(" ");
+                    }
                 }
                 System.out.println("");
+                if (3 * ((line + 1) / 3) == (line + 1)) {
+                    System.out.println("--------------------------------------------------------------------------------------------------");
+                }
             }
         } else {
             for (int i = 0; i < size; i++) {
                 for (int j = 0; j < size; j++) {
-                    int value = tab[i][j];
+                    int value = solvedDigits[i][j];
                     System.out.print(value == 0 ? "-" : value);
                     if (3 * ((j + 1) / 3) == (j + 1)) {
                         System.out.print(" ");
@@ -135,7 +158,8 @@ public class Grid {
             }
             System.out.println("...\n");
         }
-        System.out.println(this.getScore() + " digits found.");
+        System.out.println((this.getScore() - initialScore) + " digits found, "
+                + (81 - this.getScore()) + " remaining.");
     }
 
     /**
@@ -186,14 +210,14 @@ public class Grid {
             return solveWithBacktrack(index + 1);
         }
 
-        while (tab[line][col] < 9) {
-            tab[line][col]++;
+        while (solvedDigits[line][col] < 9) {
+            solvedDigits[line][col]++;
             if (isCorrect() && solveWithBacktrack(index + 1)) {
                 return true;
             }
         }
         // Tested all values, none fits. Need to go backward.
-        tab[line][col] = 0;
+        solvedDigits[line][col] = 0;
         return false;
     }
 
@@ -223,8 +247,8 @@ public class Grid {
         for (int col = 0; col < size; col++) {
             for (int i = 0; i < size; i++) {
                 for (int j = i + 1; j < size; j++) {
-                    if (tab[i][col] != 0) { // Do not compare zero values
-                        if (tab[i][col] == tab[j][col]) {
+                    if (solvedDigits[i][col] != 0) { // Do not compare zero values
+                        if (solvedDigits[i][col] == solvedDigits[j][col]) {
                             return false;
                         }
                     }
@@ -247,8 +271,8 @@ public class Grid {
         for (int line = 0; line < size; line++) {
             for (int i = 0; i < size; i++) {
                 for (int j = i + 1; j < size; j++) {
-                    if (tab[line][i] != 0) { // Do not compare zero values
-                        if (tab[line][i] == tab[line][j]) {
+                    if (solvedDigits[line][i] != 0) { // Do not compare zero values
+                        if (solvedDigits[line][i] == solvedDigits[line][j]) {
                             return false;
                         }
                     }
@@ -290,7 +314,7 @@ public class Grid {
         boolean isFull = true;
         for (int line = 0; line < size; line++) {
             for (int col = 0; col < size; col++) {
-                if (tab[line][col] == 0) {
+                if (solvedDigits[line][col] == 0) {
                     // That square is empty.
                     isFull = false;
                 }
@@ -324,8 +348,8 @@ public class Grid {
 
                         // Do not check a value against itself.
                         if (line != otherline || col != othercol) { // Do not compare zero values.
-                            if (tab[line][col] != 0) {
-                                if (tab[line][col] == tab[otherline][othercol]) {
+                            if (solvedDigits[line][col] != 0) {
+                                if (solvedDigits[line][col] == solvedDigits[otherline][othercol]) {
                                     // Found a double. Block is not correct.
                                     return false;
                                 }
@@ -348,7 +372,7 @@ public class Grid {
         int score = 0;
         for (int line = 0; line < size; line++) {
             for (int col = 0; col < size; col++) {
-                if (tab[line][col] != 0) {
+                if (solvedDigits[line][col] != 0) {
                     score++;
                 }
             }
@@ -365,7 +389,9 @@ public class Grid {
 
         solvingManually = true;
 
-        int step = 0;
+        printGrid();
+
+        step = 0;
 
         // Apply the unicity rule as long as it finds new numbers.
         int scoreBefore, scoreAfter;
@@ -374,11 +400,17 @@ public class Grid {
             solveByHandStep();
             scoreAfter = getScore();
             step++;
-        } while (scoreBefore != scoreAfter);
+        } while (step < 1);
+//        } while (scoreBefore != scoreAfter);
 
         System.out.println("Solving manually: " + step + " steps.");
         printGrid();
 
+        if (isSolved()) {
+            System.out.println("grid solved");
+        } else if (isFull()) {
+            System.out.println("grid full but not solved.");
+        }
         return isSolved();
     }
 
@@ -386,189 +418,186 @@ public class Grid {
      * Apply once every technique. Digit unicity, position unicity
      */
     private void solveByHandStep() {
-        applyDigitUnicity();
-        checkNewFoundValues();
-        applyPositionUnicity();
-        checkNewFoundValues();
-        applyDigitUnicity();
+
+        try {
+            while (true) {
+                printGrid();
+                System.out.println("**************");
+                System.out.println("**************");
+                System.out.println("*** STEP " + step + " ***");
+                System.out.println("**************");
+                System.out.println("**************");
+
+                ruleOne();
+                ruleTwo();
+                ruleThree();
+
+                System.out.println("Press any key.");
+                System.in.read();
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Grid.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
-     * A digit already found may not exist anywhere else in the same line,
-     * column of block.
-     *
-     * Make sure that each digit already found is removed from the possibilities
-     * of the same line, column and block.
+     * Rule one: if a square contains a solved digit, then that digit may no
+     * longer be candidate in the same line/col/block.
      */
-    private void applyDigitUnicity() {
+    private void ruleOne() {
         for (int line = 0; line < size; line++) {
             for (int col = 0; col < size; col++) {
-                applyDigitUnicity(line, col);
+                if (solvedDigits[line][col] != 0) {
+                    eliminateCandidate(line, col);
+                }
             }
         }
     }
 
     /**
-     * A digit that exists at only one position in a line, column or block must
-     * be validated for that position.
+     * Rule two: A digit that is the only candidate for a given square will be
+     * elected.
+     *
      */
-    private void applyPositionUnicity() {
+    private void ruleTwo() {
         for (int line = 0; line < size; line++) {
             for (int col = 0; col < size; col++) {
-                applyPositionUnicity(line, col);
+                validateOnlyCandidate(line, col);
             }
         }
     }
 
     /**
-     * Remove the digit located at the given line and column from the
-     * possibilities in the same line, the same column and the same block.
-     *
-     * This method only applies when the digit at the given line and column was
-     * already found.
-     *
-     * Example:
-     * <4> <8> 123456789 123456789 123456789 123456789 123456789 123456789
-     * 123456789 becomes
-     * <4> <8> 123-567-9 123-567-9 123-567-9 123-567-9 123-567-9 123-567-8
-     * 123-567-9
-     *
-     * @param line
-     * @param col
-     */
-    private void applyDigitUnicity(int line, int col) {
-
-        // If a digit was found, the corresponding value in 'tab' is non-zero.
-        int valueAtSpot = tab[line][col];
-
-        if (valueAtSpot != 0) {
-
-            for (int index = 0; index < size; index++) {
-                if (index != col) {
-                    // That value is no longer allowed anywhere else in this line.
-                    possibleValues[line][index][valueAtSpot - 1] = false;
-                }
-                if (index != line) {
-                    // That value is no longer allowed anywhere else in this column.
-                    possibleValues[index][col][valueAtSpot - 1] = false;
-                }
-            }
-
-            // Remove the value from the possibilities in the block.
-            int blockLine = line / 3;
-            int blockCol = col / 3;
-            for (int newLine = 3 * blockLine; newLine < 3 * blockLine + 3; newLine++) {
-                for (int newCol = 3 * blockCol; newCol < 3 * blockCol + 3; newCol++) {
-                    if (newLine != line || newCol != col) {
-                        // That value is no longer allowed anywhere else in this 3x3 block.
-                        possibleValues[newLine][newCol][valueAtSpot - 1] = false;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Scan the grid for values that remain the only possible one for their
-     * square.
+     * Rule three: a digit that has only one place to go (in a given line, or
+     * col, or block) will be elected.
      *
      */
-    private void checkNewFoundValues() {
+    private void ruleThree() {
         for (int line = 0; line < size; line++) {
             for (int col = 0; col < size; col++) {
-                int nbCandidates = 0;
-                int newFoundValue = -1;
+                for (int candidate = 1; candidate <= 9; candidate++) {
 
-                for (int k = 0; k < size; k++) {
-                    if (possibleValues[line][col][k]) {
-                        // The value (k+1) is still a candidate.
-                        nbCandidates++;
-                        newFoundValue = k + 1;
-                    }
-                }
-                if (nbCandidates == 1) {
-                    // The value k is the only one that remains.
-                    tab[line][col] = newFoundValue;
-                }
-            }
-        }
-    }
-
-    /**
-     * If a digit appears only once in a line, col or block, it is validated for
-     * the given position.
-     *
-     * Example: on the line --3--67-9 <2> --3--678- --3---7-9 ------7-9 --3-----
-     * ---4-6789 <1> ---45-78- , the value '5' is only possible on the last
-     * square; the line then becomes --3--67-9 <2> --3--678- --3---7-9 ------7-9
-     * --3----- ---4-6789 <1> <5>
-     *
-     * @param line
-     * @param col
-     */
-    private void applyPositionUnicity(int line, int col) {
-        applyPositionUnicityInLine(line, col);
-        applyPositionUnicityInColumn(line, col);
-    }
-
-    private void applyPositionUnicityInLine(int line, int col) {
-        boolean isUnique = true;
-
-        int electedCandidate = -1;
-
-        for (int candidate = 0; candidate < size; candidate++) {
-            electedCandidate = candidate;
-            if (possibleValues[line][col][candidate]) {
-                // Check if the candidate has another possible square to go
-                for (int k = 0; k < size; k++) {
-                    if (possibleValues[line][k][candidate] && k != col) {
-                        // We found another spot where 'candidate' might go on the same line.
-                        isUnique = false;
-                    }
-                }
-            }
-        }
-        if (isUnique) {
-            // At this point the elected candidate has a proper value.
-            tab[line][col] = electedCandidate;
-        }
-    }
-
-    /**
-     * If one candidate in given square is posiible nowhere else in the column,
-     * it gets validated for that square.
-     *
-     * @param line
-     * @param col
-     */
-    private void applyPositionUnicityInColumn(int line, int col) {
-
-        if (tab[line][col] == 0) { // Only when this square has not been resolved.
-
-            boolean isUnique;
-
-            for (int candidate = 0; candidate < size; candidate++) {
-                if (possibleValues[line][col][candidate]) {
-                    isUnique = true;
-                    // Check if the candidate has another possible square to go
-                    for (int otherLine = 0; otherLine < size; otherLine++) {
-                        if (possibleValues[otherLine][col][candidate] && otherLine != line) {
-                            // We found another spot where 'candidate' might go on the same line.
-                            isUnique = false;
+                    // Examine only the digits that still are candidates.
+                    if (possibleValues[line][col][candidate - 1]) {
+                        if (candidateHasOnlyOnePlaceToGo(candidate, line, col)) {
+                            solvedDigits[line][col] = candidate;
                         }
                     }
-                    if (isUnique) {
-                        tab[line][col] = candidate;
-
-                        // Only the elected value must remain in the possible values.
-                        for (int k = 0; k < size; k++) {
-                            possibleValues[line][col][k] = false;
-                        }
-                        possibleValues[line][col][candidate] = true;
-                        // At this point the elected candidate should have a proper value and not be -1;
-                    }
                 }
             }
         }
+    }
+
+    /**
+     * The value at (line, col) may no longer be a candidate in the given line
+     * and column, or in the corresponding block.
+     *
+     * @param line
+     * @param col
+     */
+    private void eliminateCandidate(int line, int col) {
+        int digit = solvedDigits[line][col];
+
+        for (int i = 0; i < size; i++) {
+            // Line:
+            possibleValues[line][i][digit - 1] = false;
+            // Column:
+            possibleValues[i][col][digit - 1] = false;
+        }
+        // Block:
+        int blockLine = line / 3;
+        int blockCol = col / 3;
+        int blockSize = (int) Math.sqrt(size);
+        for (int i = blockSize * blockLine; i < blockSize * blockLine + blockSize; i++) {
+            for (int j = blockSize * blockCol; j < blockSize * blockCol + blockSize; j++) {
+                possibleValues[i][j][digit - 1] = false;
+            }
+        }
+    }
+
+    /**
+     * In a square not yet validated, if there is only one candidate, it is
+     * elected.
+     *
+     * @param line
+     * @param col
+     */
+    private void validateOnlyCandidate(int line, int col) {
+        if (solvedDigits[line][col] == 0) {
+            // Count the candidates
+            int nbCandidates = 0;
+            int greatestCandidateValue = 0; // The last candidate will be stored here.
+
+            for (int i = 0; i < 9; i++) {
+                if (possibleValues[line][col][i] == true) {
+                    nbCandidates++;
+                    greatestCandidateValue = i + 1;
+                }
+            }
+            if (nbCandidates == 1) {
+                // Elect that candidate.
+                solvedDigits[line][col] = greatestCandidateValue;
+            }
+        }
+    }
+
+    /**
+     * Test if a given digit may be positioned somewhere else in the same
+     * line/col/block, or if (line,col) is the only possible position.
+     *
+     * @param candidate the digit we test (1->9)
+     * @param line
+     * @param col
+     * @return true when there is at least one set (i.e. line, column or block)
+     * where the digit has only one place to go, even though there might be two
+     * available positions in another set.
+     */
+    private boolean candidateHasOnlyOnePlaceToGo(int candidate, int line, int col) {
+
+        int nbAvailablePositions;
+
+        // Test the line.
+        nbAvailablePositions = 0;
+        for (int otherCol = 0; otherCol < size; otherCol++) {
+            if (possibleValues[line][otherCol][candidate - 1]) {
+                nbAvailablePositions++;
+            }
+        }
+        if (nbAvailablePositions == 1) {
+            // Candidate has only one possible position in this line; it is solved.
+            return true;
+        }
+
+        // Test the column.
+        nbAvailablePositions = 0;
+        for (int otherLine = 0; otherLine < size; otherLine++) {
+            if (possibleValues[otherLine][col][candidate - 1]) {
+                nbAvailablePositions++;
+            }
+        }
+        if (nbAvailablePositions == 1) {
+            // Candidate has only one possible position in this line; it is solved.
+            return true;
+        }
+
+        // Test the block
+        nbAvailablePositions = 0;
+        int blockLine = line / 3;
+        int blockCol = col / 3;
+        int blockSize = (int) Math.sqrt(size);
+        for (int i = blockSize * blockLine; i < blockSize * blockLine + blockSize; i++) {
+            for (int j = blockSize * blockCol; j < blockSize * blockCol + blockSize; j++) {
+                if (possibleValues[i][j][candidate - 1]) {
+                    nbAvailablePositions++;
+                }
+            }
+        }
+        if (nbAvailablePositions == 1) {
+            // Candidate has only one possible position in this block; it is solved.
+            return true;
+        }
+
+        // Candidate has at least two possible places in both the line, the column and the block; no way to tell yet.
+        return false;
     }
 }

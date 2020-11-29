@@ -16,10 +16,10 @@ public class Sudoku {
      */
     public static void main(String[] args) {
 
-        String gridToSolve = Grid.grid4;
+        String gridToSolve = Grid.grid2;
 
         Grid g = new Grid(gridToSolve);
-        g.solveWithBacktrack();
+//        g.solveWithBacktrack();
         g = new Grid(gridToSolve);
         g.solveByHand();
     }
